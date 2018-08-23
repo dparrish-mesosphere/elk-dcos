@@ -27,6 +27,12 @@ managed.
 
 ## Usage
 
+1. Create a copy of the example hosts file.
+
+    ```
+    cp hosts.example hosts
+    ```
+
 1. Populate the IP addresses for your DC/OS cluster nodes in the `hosts` file.
 
     ```ini
@@ -36,4 +42,8 @@ managed.
     192.168.1.12
     ```
 
-1. Run the playbook
+1. Run the playbook.
+
+    ```
+    ansible-playbook -i hosts --private-key <ssh_key> main.yaml
+    ```
