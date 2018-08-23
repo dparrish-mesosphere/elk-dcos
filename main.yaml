@@ -1,0 +1,84 @@
+---
+- hosts: dcos-cluster
+  remote_user: centos
+  become: true
+  tasks:
+    - name: Create /var/log/dcos
+      file:
+        path: /var/log/dcos
+        state: directory
+
+    - name: Download Filebeat
+      get_url:
+        dest: /tmp/{{ filebeat_package }}
+        url: "{{ filebeat_package_url }}"
+        force: yes
+
+    - name: Install Filebeat
+      yum:
+        name: /tmp/{{ filebeat_package }}
+        state: present
+
+    - name: Configure Filebeat
+      template:
+        src: templates/filebeat.yml.j2
+        dest: /etc/filebeat/filebeat.yml
+        backup: yes
+        mode: 0644
+
+    - name: Setup Custom systemd Unit for Filebeat
+      template:
+        src: templates/dcos-journalctl-filebeat.service
+        dest: /etc/systemd/system
+        mode: 0755
+
+    - name: Setup Logrotate Configuration for DC/OS Log
+      template:
+        src: templates/dcos.logrotate
+        dest: /etc/logrotate.d/dcos
+        mode: 0755
+
+    - name: Import Elastic's Signing Key
+      rpm_key:
+        state: present
+        key: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+
+    - name: Add Logstash yum Repository
+      yum_repository:
+        name: elastic
+        baseurl: https://artifacts.elastic.co/packages/6.x/yum
+        gpgcheck: yes
+        gpgkey: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+        description: "Elastic repository for 6.x packages"
+
+    - name: Install Logstash
+      yum:
+        name: logstash-{{ logstash_version }}
+        state: present
+
+    - name: Create Directory for Custom Pattern Definitions
+      file:
+        state: directory
+        path: /etc/logstash/conf.d/patterns
+
+    - name: Define Custom Pattern
+      template:
+        src: templates/dcos.patterns
+        dest: /etc/logstash/conf.d/patterns/dcos
+
+    - name: Configure Logstash
+      template:
+        src: templates/dcos.conf.logstash
+        dest: /etc/logstash/conf.d/dcos.conf
+
+
+    - name: Start Logstash
+      systemd:
+        name: "{{ item }}"
+        state: restarted
+        enabled: yes
+        daemon_reload: yes
+      with_items:
+        - logstash
+        - filebeat
+        - dcos-journalctl-filebeat

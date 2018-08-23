@@ -1,0 +1,11 @@
+[dcos-cluster]
+# master-node-1
+# private-agent-1
+# public-agent-1
+
+[dcos-cluster:vars]
+elasticsearch_url = master.elastic.l4lb.thisdcos.directory:9200
+filebeat_package_url = https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-5.0.0-x86_64.rpm
+filebeat_package = filebeat-5.0.0-x86_64.rpm
+logstash_version = 6.3.2
+logstash_port = 5044
