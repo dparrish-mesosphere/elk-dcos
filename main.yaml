@@ -51,6 +51,11 @@
         gpgkey: https://artifacts.elastic.co/GPG-KEY-elasticsearch
         description: "Elastic repository for 6.x packages"
 
+    - name: Install a jre
+      yum:
+        name: jre
+        state: present
+
     - name: Install Logstash
       yum:
         name: logstash-{{ logstash_version }}
